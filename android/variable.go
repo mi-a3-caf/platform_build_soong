@@ -20,6 +20,8 @@ import (
 	"runtime"
 	"strings"
 
+	"custom/soong/android"
+
 	"github.com/google/blueprint/proptools"
 )
 
@@ -152,6 +154,9 @@ type variableProperties struct {
 		Device_support_hwfde_perf struct {
 			Cflags []string
 		}
+
+		// include Custom variables
+		Custom android.Product_variables
 	} `android:"arch_variant"`
 }
 
@@ -319,6 +324,9 @@ type productVariables struct {
 	ProductHiddenAPIStubsTest   []string `json:",omitempty"`
 
 	TargetFSConfigGen []string `json:",omitempty"`
+
+	// include Custom variables
+	Custom android.ProductVariables
 }
 
 func boolPtr(v bool) *bool {
@@ -386,6 +394,7 @@ func variableMutator(mctx BottomUpMutatorContext) {
 
 func doVariableMutation(mctx BottomUpMutatorContext, a *ModuleBase, variableValues reflect.Value, zeroValues reflect.Value,
 	valStruct reflect.Value) {
+
 	for i := 0; i < variableValues.NumField(); i++ {
 		variableValue := variableValues.Field(i)
 		zeroValue := zeroValues.Field(i)
@@ -394,11 +403,12 @@ func doVariableMutation(mctx BottomUpMutatorContext, a *ModuleBase, variableValu
 
 		// Check that the variable was set for the product
 		val := valStruct.FieldByName(name)
-        if val.IsValid() && val.Kind() == reflect.Struct {
+
+                if val.IsValid() && val.Kind() == reflect.Struct {
 			doVariableMutation(mctx, a, variableValue, zeroValue, val)
-            continue
-        } else if !val.IsValid() || val.Kind() != reflect.Ptr || val.IsNil() {
-			continue
+                    continue
+	       	} else if !val.IsValid() || val.Kind() != reflect.Ptr || val.IsNil() {
+	            continue
 		}
 
 		val = val.Elem()
